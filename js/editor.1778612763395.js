@@ -1,3 +1,20 @@
+/**
+ * editor.js
+ *
+ * Complete editor logic extracted from the site, updated to:
+ * - create a Shadow DOM-based editor UI (closedUI / openedUI) at runtime
+ * - prefer elements inside the shadow root via editorQuery()
+ * - load Clerk dynamically and wait for it before initializing editor
+ * - load Stripe in background (ESM import)
+ *
+ * Usage:
+ *  <script type="module" src="/path/to/editor.js"></script>
+ *
+ * Notes:
+ * - This file will create a small editor UI inside a shadow root appended to document.body.
+ * - The rest of the editor logic operates the same as before but uses the shadow UI when available.
+ */
+
 /* =========================
    Utilities
    ========================= */
@@ -198,6 +215,33 @@ function createShadowEditorUI() {
   return { host: _editorHost, root: _editorRoot };
 }
 
+async function autoFillSiteName(userId) {
+  try {
+    const res = await fetch(`/api/repos?ID=${encodeURIComponent(userId)}`);
+    const data = await res.json();
+
+    if (!Array.isArray(data.repos) || data.repos.length === 0) return;
+
+    // Pick the most recently updated repo
+    const sorted = data.repos
+      .filter(r => r.repo)
+      .sort((a, b) => (b.lastUpdated || 0) - (a.lastUpdated || 0));
+
+    if (sorted.length === 0) return;
+
+    const repoName = sorted[0].repo;
+
+    // Access shadow DOM input
+    const { root } = createShadowEditorUI();
+    const input = root.querySelector("#SiteName");
+
+    if (input && !input.value) {
+      input.value = repoName;
+    }
+  } catch (err) {
+    console.error("Failed to auto-fill site name:", err);
+  }
+}
 
 // Query helper: prefer shadow root, fallback to document
 function editorQuery(selector) {
@@ -208,11 +252,12 @@ function editorQuery(selector) {
   return document.querySelector(selector);
 }
 
+
 /* =========================
    Clerk Loader + Bootstrap
    ========================= */
 
-async function loadClerkScript(publishableKey, timeoutMs = 8000) {
+async function loadClerkScript(publishableKey) {
   return new Promise((resolve, reject) => {
     if (window.Clerk) {
       resolve(window.Clerk);
@@ -225,82 +270,25 @@ async function loadClerkScript(publishableKey, timeoutMs = 8000) {
     script.crossOrigin = "anonymous";
     script.setAttribute("data-clerk-publishable-key", publishableKey);
 
-    let settled = false;
-    const onResolve = () => {
-      if (settled) return;
-      settled = true;
-      resolve(window.Clerk || null);
-    };
-    const onReject = (err) => {
-      if (settled) return;
-      settled = true;
-      reject(err);
-    };
-
     script.onload = async () => {
       try {
         if (typeof Clerk?.load === "function") {
           await Clerk.load();
         }
-        onResolve();
+        resolve(window.Clerk);
       } catch (err) {
         console.error("Clerk.load() failed:", err);
-        onResolve();
+        resolve(window.Clerk || null);
       }
     };
 
     script.onerror = (err) => {
       console.error("Failed to load Clerk script:", err);
-      onReject(err);
+      reject(err);
     };
 
     document.head.appendChild(script);
-
-    setTimeout(() => {
-      if (!settled) {
-        // Timeout: resolve with whatever exists (maybe null)
-        settled = true;
-        resolve(window.Clerk || null);
-      }
-    }, timeoutMs);
   });
-}
-
-/** ensureClerk: waits for Clerk to be available, attempts to load if missing */
-async function ensureClerk() {
-  if (typeof Clerk !== "undefined" && Clerk) {
-    try {
-      if (typeof Clerk.load === "function") await Clerk.load();
-    } catch (e) {
-      // ignore
-    }
-    return Clerk;
-  }
-
-  // Try to load Clerk script (non-blocking if CDN fails)
-  try {
-    await loadClerkScript("pk_live_Y2xlcmsuaWRlYWdvLmllJA");
-  } catch (err) {
-    console.warn("Clerk script failed to load; continuing without Clerk.");
-  }
-
-  // Wait a short while for Clerk to initialize
-  const start = Date.now();
-  const timeout = 5000;
-  while (typeof Clerk === "undefined" && Date.now() - start < timeout) {
-    // eslint-disable-next-line no-await-in-loop
-    await new Promise((r) => setTimeout(r, 50));
-  }
-
-  if (typeof Clerk !== "undefined" && Clerk && typeof Clerk.load === "function") {
-    try {
-      await Clerk.load();
-    } catch (e) {
-      // ignore
-    }
-  }
-
-  return window.Clerk || null;
 }
 
 /* =========================
@@ -637,7 +625,7 @@ function openImageEditor(targetImg, uploadedSrc) {
    ========================= */
 
 function enableTextEditing() {
-  const editableSelectors = [
+   const editableSelectors = [
     ".business_name",
     ".tagline",
     ".about_us p",
@@ -656,7 +644,7 @@ function enableTextEditing() {
 
   elements.forEach((el) => {
     if (el.closest && el.closest(".sidebar")) return;
-
+     
     el.classList.add("editable-text");
     el.style.cursor = "text";
 
@@ -763,11 +751,18 @@ function Minify() {
    ========================= */
 
 window.cleanDocumentForPublish = async function cleanDocumentForPublish() {
+  // Clone the whole document so we can safely mutate it
   const docClone = document.documentElement.cloneNode(true);
 
-  // Remove elements with id="Remove" (typo in original code fixed)
+  // Remove only elements that have the id "Revove"
+  // (querySelectorAll supports multiple matches even though id is normally unique)
   docClone.querySelectorAll("#Remove").forEach(n => n.remove());
 
+  // If you previously removed scripts except RequiredScript, we no longer do that.
+  // However, if you want to remove script elements that specifically have id="Revove",
+  // the line above already removed them because it targets any element with that id.
+
+  // Clean attributes and editing helpers from all remaining elements
   const allElements = docClone.querySelectorAll("*");
   allElements.forEach(el => {
     el.removeAttribute("contenteditable");
@@ -781,6 +776,7 @@ window.cleanDocumentForPublish = async function cleanDocumentForPublish() {
     el.classList.remove("editable-text", "lazyload--placeholder");
   });
 
+  // Ensure head exists and that style.css is linked
   let head = docClone.querySelector("head");
   if (!head) {
     head = document.createElement("head");
@@ -795,6 +791,7 @@ window.cleanDocumentForPublish = async function cleanDocumentForPublish() {
     head.appendChild(link);
   }
 
+  // Collect image srcs and rewrite src attributes to images/img_X.jpg
   const imgs = Array.from(docClone.querySelectorAll("img"));
   const originalSrcs = imgs.map(img => img.getAttribute("src") || "");
 
@@ -810,6 +807,7 @@ window.cleanDocumentForPublish = async function cleanDocumentForPublish() {
   const cleanedHTML = "<!DOCTYPE html>\n" + docClone.outerHTML;
   return { cleanedHTML, originalSrcs };
 };
+
 
 function setUploadButtonState(state) {
   const btn = editorQuery("#UploadBtn") || document.getElementById("UploadBtn");
@@ -829,6 +827,10 @@ function setUploadButtonState(state) {
     btn.disabled = false;
   }
 }
+
+/**
+ * Helpers used by publish()
+ */
 
 /** Derive a safe template/folder name from the current URL (fallback if none) */
 function getTemplateNameFromUrl(fallbackName = "DogGroomer") {
@@ -871,6 +873,7 @@ function filenameFromUrl(url, fallback) {
 async function collectCssFiles() {
   const cssFiles = [];
 
+  // External link tags (preserve order)
   const links = Array.from(document.querySelectorAll('link[rel="stylesheet"]'));
   await Promise.all(
     links.map(async (link, i) => {
@@ -898,12 +901,14 @@ async function collectCssFiles() {
     })
   );
 
+  // Inline <style> blocks
   const inlineStyles = Array.from(document.querySelectorAll("style"));
   inlineStyles.forEach((st, i) => {
     const text = st.textContent || "";
     if (text.trim()) cssFiles.push({ path: `css/inline_${i + 1}.css`, content: text });
   });
 
+  // Fallback to style.css if nothing collected
   if (cssFiles.length === 0) {
     try {
       const resp = await fetch("style.css");
@@ -923,6 +928,7 @@ async function collectCssFiles() {
 async function collectJsFiles() {
   const jsFiles = [];
 
+  // External script tags (preserve order)
   const scripts = Array.from(document.querySelectorAll('script[src]'));
   await Promise.all(
     scripts.map(async (script, i) => {
@@ -951,6 +957,7 @@ async function collectJsFiles() {
     })
   );
 
+  // Inline scripts (non-src)
   const inlineScripts = Array.from(document.querySelectorAll("script:not([src])"));
   inlineScripts.forEach((s, i) => {
     const text = s.textContent || "";
@@ -967,14 +974,16 @@ window.publish = async function publish() {
 
     const { cleanedHTML, originalSrcs } = await window.cleanDocumentForPublish();
     const nameEl = editorQuery("#SiteName") || document.getElementById("SiteName");
-    const nameValue = (nameEl?.value || "").trim();
+    const nameValue = nameEl?.value?.trim() || "";
     if (nameValue.length < 3) {
       setUploadButtonState();
       return;
     }
 
+    // Collect CSS and JS files (external + inline)
     const [cssFiles, jsFiles] = await Promise.all([collectCssFiles(), collectJsFiles()]);
 
+    // Fetch images (same logic as before)
     const imageFiles = await Promise.all(
       originalSrcs.map(async (src, index) => {
         if (!src) return null;
@@ -1010,6 +1019,11 @@ window.publish = async function publish() {
 
     const validimages = imageFiles.filter(Boolean);
 
+    // Build files array:
+    // - index.html (root)
+    // - css/* (folder)
+    // - js/* (folder)
+    // - images/*
     const files = [
       { path: "index.html", content: cleanedHTML },
       ...cssFiles,
@@ -1017,6 +1031,7 @@ window.publish = async function publish() {
       ...validimages,
     ];
 
+    // Optional: also include a top-level style.css for backward compatibility if present
     if (!cssFiles.some((f) => f.path === "style.css")) {
       try {
         const resp = await fetch("style.css");
@@ -1036,14 +1051,24 @@ window.publish = async function publish() {
       return;
     }
 
+    // Derive template/folder name from URL (replaces hardcoded "DogGroomer")
     const templateName = getTemplateNameFromUrl("DogGroomer");
 
-    // Prefix all file paths with the template folder
-    const filesWithPrefix = files.map(f => ({ ...f, path: `${templateName}/${f.path}` }));
+    // If you want the server to store everything under a template subfolder,
+    // you can prefix file paths with `${templateName}/` here before upload.
+    // Example (uncomment to enable):
+    // const filesWithPrefix = files.map(f => ({ ...f, path: `${templateName}/${f.path}` }));
+    // await uploadProject(filesWithPrefix, nameValue, window.Clerk?.user?.id, templateName);
+     // Prefix all file paths with the template folder
+const filesWithPrefix = files.map(f => ({
+  ...f,
+  path: `${templateName}/${f.path}`
+}));
 
-    await uploadProject(files, nameValue, window.Clerk?.user?.id, templateName);
+await uploadProject(files, nameValue, window.Clerk?.user?.id, templateName);
 
-    console.log("Publish: uploadProject invoked with", filesWithPrefix.length, "files.");
+
+    console.log("Publish: uploadProject invoked with", files.length, "files.");
     alert("Publish initiated. Check console for upload response.");
 
     setUploadButtonState("uploaded");
@@ -1055,26 +1080,21 @@ window.publish = async function publish() {
 };
 
 async function uploadProject(files, name, ID, template) {
-  try {
-    const res = await fetch("/api/github/upload", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ files, name, ID, template }),
-    });
+  const res = await fetch("/api/github/upload", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ files, name, ID, template }),
+  });
 
-    const data = await res.json();
-    console.log("uploadProject response:", data);
+  const data = await res.json();
+  console.log("uploadProject response:", data);
 
-    if (data?.error === "Repo limit reached. Maximum of 2 repos allowed.") {
-      alert("You have reached the maximum of 2 published sites.\nDelete one to publish a new one.");
-      throw new Error("Repo limit reached");
-    }
-
-    return data;
-  } catch (err) {
-    console.error("uploadProject failed:", err);
-    throw err;
+  if (data.error === "Repo limit reached. Maximum of 2 repos allowed.") {
+    alert("You have reached the maximum of 2 published sites.\nDelete one to publish a new one.");
+    throw new Error("Repo limit reached");
   }
+
+  return data;
 }
 
 /* =========================
@@ -1084,6 +1104,10 @@ async function uploadProject(files, name, ID, template) {
 let stripe = null;
 window._stripeElements = null;
 window._stripeClientSecret = null;
+window.addEventListener("beforeunload", () => {
+  saveLocalBackup(true);
+});
+
 
 const STRIPE_PUBLISHABLE_KEY =
   "pk_test_51SmbYSRqySo1SbUl9zUatOFdeP2eN1jYSDT4gNWFjzDaPLMF4QaeXONAJ9Ii2QVz7Bugnhp11UFCCFyg625JGGGu00uMAvRXJq";
@@ -1103,6 +1127,9 @@ function openPaymentModal() {
 function closePaymentModal() {
   if (modal) modal.style.display = "none";
 }
+
+if (closeBtn) closeBtn.addEventListener("click", closePaymentModal);
+if (cancelBtn) cancelBtn.addEventListener("click", closePaymentModal);
 
 async function loadStripeModule() {
   try {
@@ -1200,265 +1227,15 @@ function initializeEditor() {
   rebindButtons();
 }
 
+
 async function waitForEditorUI(timeout = 5000) {
   const start = Date.now();
   while (Date.now() - start < timeout) {
     if (editorQuery("#closedUI") || editorQuery("#openedUI")) return true;
-    // eslint-disable-next-line no-await-in-loop
     await new Promise((r) => setTimeout(r, 100));
   }
   return false;
 }
-
-/* =========================
-   Repo utilities and sync
-   ========================= */
-
-async function fetchUserRepos(userId) {
-  try {
-    const res = await fetch("/api/repos", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ID: userId }),
-      cache: "no-store"
-    });
-
-    if (!res.ok) {
-      console.warn("fetchUserRepos: non-ok response");
-      return [];
-    }
-
-    const data = await res.json();
-    return data.repos || [];
-  } catch (err) {
-    console.warn("fetchUserRepos failed:", err);
-    return [];
-  }
-}
-
-function findRepoForTemplate(repos, template) {
-  return repos.find(r => r.template === template);
-}
-
-/* Use the requested selectors including h5 and h6 */
-const selectors = ["img", "h1", "h2", "h3", "h4", "h5", "h6", "p", "span"];
-
-async function syncTemplateContentMobileSafe(repo, branch = "main", entry = "index.html") {
-  const base = `https://raw.githubusercontent.com/Puff3r-Ruff/${repo}/${branch}/`;
-  const bust = `?v=${Date.now()}`;
-
-  const htmlRes = await fetch(base + entry + bust, {
-    cache: "no-store",
-    mode: "cors"
-  });
-
-  if (!htmlRes.ok) throw new Error("Failed to load repo HTML");
-
-  const html = await htmlRes.text();
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(html, "text/html");
-
-  selectors.forEach(selector => {
-    const repoEls = [...doc.querySelectorAll(selector)];
-    const pageEls = [...document.querySelectorAll(selector)];
-
-    repoEls.forEach((repoEl, i) => {
-      const pageEl = pageEls[i];
-      if (!pageEl) return;
-
-      if (selector === "img") {
-        let src = repoEl.getAttribute("src");
-        if (src && !src.startsWith("http") && !src.startsWith("//")) {
-          src = base + src + bust;
-        }
-        if (src) pageEl.src = src;
-      } else {
-        pageEl.innerHTML = repoEl.innerHTML;
-      }
-    });
-  });
-
-  // Wait for editor UI and set SiteName safely
-  await waitForEditorUI(2000);
-  const siteNameEl = editorQuery("#SiteName") || document.getElementById("SiteName");
-  if (siteNameEl) siteNameEl.value = repo;
-}
-
-/* =========================
-   COOLDOWN SYSTEM
-   ========================= */
-
-function showCooldownOverlay(secondsLeft) {
-  let overlay = document.getElementById("cooldownOverlay");
-  if (!overlay) {
-    overlay = document.createElement("div");
-    overlay.id = "cooldownOverlay";
-    overlay.style.position = "fixed";
-    overlay.style.left = 0;
-    overlay.style.top = 0;
-    overlay.style.right = 0;
-    overlay.style.bottom = 0;
-    overlay.style.display = "flex";
-    overlay.style.alignItems = "center";
-    overlay.style.justifyContent = "center";
-    overlay.style.background = "rgba(0,0,0,0.6)";
-    overlay.style.color = "#fff";
-    overlay.style.zIndex = 3147483647;
-    overlay.style.fontSize = "18px";
-    document.body.appendChild(overlay);
-  }
-  overlay.textContent = `Updating. Please allow up to 2 minutes`;
-  overlay.style.display = "flex";
-}
-
-function hideCooldownOverlay() {
-  const overlay = document.getElementById("cooldownOverlay");
-  if (overlay) overlay.style.display = "none";
-}
-
-async function waitForUpdateCooldown(lastUpdated) {
-  const TWO_MIN = 2 * 60 * 1000;
-  const now = Date.now();
-  const elapsed = now - lastUpdated;
-
-  if (elapsed >= TWO_MIN) return;
-
-  const waitTime = TWO_MIN - elapsed;
-  let remaining = Math.ceil(waitTime / 1000);
-
-  showCooldownOverlay(remaining);
-
-  return new Promise(resolve => {
-    const interval = setInterval(() => {
-      remaining -= 1;
-      if (remaining <= 0) {
-        clearInterval(interval);
-        hideCooldownOverlay();
-        resolve();
-      } else {
-        showCooldownOverlay(remaining);
-      }
-    }, 1000);
-  });
-}
-
-/* =========================
-   MAIN REPO LOADING FLOW
-   ========================= */
-
-window.addEventListener("DOMContentLoaded", () => {
-  (async () => {
-    try {
-      await ensureClerk();
-    } catch (err) {
-      console.error("Initial ensureClerk failed:", err);
-    }
-  })();
-
-  (async () => {
-    try {
-      // Prevent infinite reload loops: only add fresh param if not present
-      const url = new URL(window.location.href);
-      if (!sessionStorage.getItem("freshLoad") && !url.searchParams.has("fresh")) {
-        sessionStorage.setItem("freshLoad", "1");
-        url.searchParams.set("fresh", Date.now().toString());
-        window.location.replace(url.toString());
-        return;
-      }
-
-      await ensureClerk();
-
-      // Wait briefly for Clerk.user to be available (but don't block forever)
-      let authUserId = null;
-      const maxAttempts = 20;
-      for (let i = 0; i < maxAttempts; i++) {
-        if (window.Clerk?.user?.id) {
-          authUserId = window.Clerk.user.id;
-          break;
-        }
-        // eslint-disable-next-line no-await-in-loop
-        await new Promise(r => setTimeout(r, 150));
-      }
-
-      if (!authUserId) {
-        // If Clerk not available, redirect to home as a safe fallback
-        window.location.href = "/";
-        return;
-      }
-
-      const currentUrl = new URL(window.location.href);
-      const repo = currentUrl.searchParams.get("repo");
-      const templateFromUrl = currentUrl.searchParams.get("template");
-      const userIdFromUrl = currentUrl.searchParams.get("userId");
-
-      if (!userIdFromUrl || authUserId !== userIdFromUrl) {
-        window.location.href = "/";
-        return;
-      }
-
-      if (!repo) {
-        window.location.href = "/";
-        return;
-      }
-
-      const res = await fetch("/api/repos", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ID: authUserId }),
-        cache: "no-store"
-      });
-
-      if (!res.ok) {
-        console.error("Failed to fetch repos");
-        window.location.href = "/";
-        return;
-      }
-
-      const data = await res.json();
-      const repos = data.repos || [];
-
-      const match = repos.find(r => r.repo === repo);
-      if (!match) {
-        window.location.href = "/";
-        return;
-      }
-
-      const templateFromDB = match.template;
-
-      if (templateFromDB && templateFromDB !== templateFromUrl) {
-        const params = new URLSearchParams({
-          repo,
-          userId: authUserId,
-          template: templateFromDB
-        });
-
-        window.location.href = `/Template/${templateFromDB}/${templateFromDB}.html?${params.toString()}`;
-        return;
-      }
-
-      if (match.lastUpdated) {
-        try {
-          await waitForUpdateCooldown(match.lastUpdated);
-        } catch (err) {
-          console.warn("Cooldown wait interrupted:", err);
-        }
-      }
-
-      try {
-        await syncTemplateContentMobileSafe(repo);
-      } catch (err) {
-        console.error("Failed to sync template content:", err);
-      }
-    } catch (err) {
-      console.error("Main repo loading flow failed:", err);
-      window.location.href = "/";
-    }
-  })();
-});
-
-/* =========================
-   Boot
-   ========================= */
 
 (async function boot() {
   // Wait for DOM ready
@@ -1468,6 +1245,8 @@ window.addEventListener("DOMContentLoaded", () => {
 
   // Create shadow UI early
   createShadowEditorUI();
+  
+
 
   // Load Clerk
   try {
@@ -1480,6 +1259,9 @@ window.addEventListener("DOMContentLoaded", () => {
   // Load Stripe in background
   loadStripeModule().catch((err) => console.warn("Stripe background load failed:", err));
 
+if (window.Clerk?.user?.id) {
+  autoFillSiteName(window.Clerk?.user?.id);
+}
 
   // Initialize editor AFTER autoload
   initializeEditor();
