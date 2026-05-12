@@ -1,20 +1,3 @@
-/**
- * editor.js
- *
- * Complete editor logic extracted from the site, updated to:
- * - create a Shadow DOM-based editor UI (closedUI / openedUI) at runtime
- * - prefer elements inside the shadow root via editorQuery()
- * - load Clerk dynamically and wait for it before initializing editor
- * - load Stripe in background (ESM import)
- *
- * Usage:
- *  <script type="module" src="/path/to/editor.js"></script>
- *
- * Notes:
- * - This file will create a small editor UI inside a shadow root appended to document.body.
- * - The rest of the editor logic operates the same as before but uses the shadow UI when available.
- */
-
 /* =========================
    Utilities
    ========================= */
@@ -44,15 +27,8 @@ let _editorHost = null;
 let _editorRoot = null;
 
 function createShadowEditorUI() {
-  // Reset if removed
-  if (_editorHost && !_editorHost.isConnected) {
-    _editorHost = null;
-    _editorRoot = null;
-  }
-
   if (_editorHost) return { host: _editorHost, root: _editorRoot };
 
-  // Host
   _editorHost = document.createElement("div");
   _editorHost.id = "editor-shadow-host";
   _editorHost.style.all = "initial";
@@ -60,145 +36,35 @@ function createShadowEditorUI() {
 
   _editorRoot = _editorHost.attachShadow({ mode: "open" });
 
-  /* ============================
-     STYLES (scoped)
-  ============================ */
   const styles = `
-    /* Sliding panel */
-    #sidePanel {
-      width: 260px;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      text-align: center;
-      background: #092a49;
-      padding: 1rem;
-
-      position: fixed;
-      top: 0;
-      bottom: 0;
-      left: 0;
-
-      transform: translateX(-100%);
-      transition: transform 0.35s ease;
-
-      z-index: 999999;
-    }
-
-    #sidePanel.open {
-      transform: translateX(0);
-    }
-
-    /* Toggle tab */
-    #toggleTab {
-      position: fixed;
-      top: 50%;
-      left: 0;
-      transform: translate(0, -50%);
-      background: #1e90ff;
-      color: #fff;
-      border-radius: 0 4px 4px 0;
-      padding: 10px 14px;
-      cursor: pointer;
-      z-index: 1000000;
-      font-size: 18px;
-      border: none;
-    }
-
-    /* Buttons */
-    .btn {
-      border-radius: 4px;
-      border: none;
-      padding: 10px 14px;
-      font-size: 14px;
-      cursor: pointer;
-      text-align: center;
-      font-weight: 500;
-      width: 100%;
-    }
-
-    .btn-back {
-      background: #000;
-      color: #fff;
-      width: 100%;
-      padding: 10px;
-      border-radius: 6px;
-      margin-bottom: 8px;
-      text-align: center;
-      box-sizing: border-box;
-    }
-
-    .btn-name {
-      background: #fff;
-      color: #000;
-      border: 1px solid #d0d0d0;
-      font-weight: 400;
-    }
-
-    .btn-update {
-      background: #4fb3ff;
-      color: #fff;
-      font-size: 1.2rem;
-      width: 100%;
-      padding: 5px;
-      border-radius: 6px;
-      margin-bottom: 8px;
-      text-align: center;
-      box-sizing: border-box;
-    }
-
-    /* Collapse button */
-    #collapseBtn {
-      background: #1e90ff;
-      color: #fff;
-      font-size: 18px;
-    }
-
-    .arrow {
-      display: inline-block;
-      transition: transform 0.25s ease;
-    }
-
-    .arrow.rotated {
-      transform: rotate(180deg);
-    }
-
-    .hidden {
-      display: none;
-    }
-
-    input#SiteName {
-      width: 100%;
-      padding: 10px;
-      border-radius: 6px;
-      border: 1px solid #ccc;
-      margin-bottom: 8px;
-      text-align: center;
-      box-sizing: border-box;
-    }
+    :host { font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; }
+    .editor-panel { position: fixed; left: 20px; bottom: 20px; z-index: 2147483647; }
+    .opened-ui, .closed-ui { background: #fff; border-radius: 10px; box-shadow: 0 6px 24px rgba(0,0,0,0.12); }
+    .opened-ui { width: 300px; padding: 12px; transform: translate(5%, -5%) scale(1.05); }
+    .closed-ui { width: 90px; padding: 8px; display: none; }
+    .btn { display:block; width:100%; padding:10px; border-radius:6px; border:none; cursor:pointer; font-weight:600; margin-bottom:8px;}
+    .btn-primary { background:#00b2ff; color:#000; }
+    .btn-black { background:#000; color:#fff; }
+    .btn-green { background:#28a745; color:#fff; }
+    input#SiteName { width:100%; padding:10px; margin-bottom: 8px; border-radius:6px; border:1px solid #ccc; box-sizing:border-box; pointer-events: none; text-align: center;}
+    a { color: inherit; text-decoration: none; display:block; width:100%; height:100%; }
   `;
 
-  /* ============================
-     HTML (scoped)
-  ============================ */
   const html = `
-    <div id="panel">
-      <button id="toggleTab">▶</button>
-
-      <div id="sidePanel">
-        <button class="btn" id="collapseBtn">
-          <span class="arrow" id="arrow">▼</span>
-        </button>
-
-        <div id="contentArea">
-          <button class="btn btn-back" id="backToTemplates">
-            <a href="/BusinessHud" style="color:inherit;text-decoration:none;">Back to Templates</a>
+    <div class="editor-panel">
+      <div class="opened-ui" id="closedUI">
+        <button id="minifyBtn" class="btn btn-primary" title="Minify">HIDE</button>
+        <div id="saveLoadContainer">
+          <button id="backToTemplates" class="btn btn-black" style="margin-top:0;">
+            <a href="/BusinessHud">Business Hud</a>
           </button>
-
           <input id="SiteName" placeholder="Site name" />
-
-          <button class="btn btn-update" id="UploadBtn">subscribe</button>
+          <button id="UploadBtn" class="btn btn-green">subscribe</button>
         </div>
+      </div>
+
+      <div class="closed-ui" id="openedUI">
+        <button id="unminifyBtn" class="btn btn-primary">Open</button>
       </div>
     </div>
   `;
@@ -214,7 +80,6 @@ function createShadowEditorUI() {
   return { host: _editorHost, root: _editorRoot };
 }
 
-
 // Query helper: prefer shadow root, fallback to document
 function editorQuery(selector) {
   if (_editorRoot) {
@@ -223,133 +88,12 @@ function editorQuery(selector) {
   }
   return document.querySelector(selector);
 }
-/* =========================
-   Local Save / Load (24 hours)
-   ========================= */
-
-const LOCAL_KEY = "editor_local_backup_v1";
-
-let autosaveTimer = null;
-
-function scheduleAutosave() {
-  clearTimeout(autosaveTimer);
-  autosaveTimer = setTimeout(() => {
-    saveLocalBackup(true); // silent autosave
-  }, 800); // waits 0.8s after last change
-}
-
-function autoLoadIfExists() {
-  const raw = localStorage.getItem(LOCAL_KEY);
-  if (!raw) return;
-
-  const data = JSON.parse(raw);
-  const age = Date.now() - data.timestamp;
-
-  if (age > 24 * 60 * 60 * 1000) {
-    localStorage.removeItem(LOCAL_KEY);
-    return;
-  }
-
-  // Auto-load
-  loadLocalBackup();
-}
-
-async function saveLocalBackup(silent = false) {
-  const nameEl = editorQuery("#SiteName");
-  const siteName = nameEl?.value?.trim() || "";
-
-  const { cleanedHTML, originalSrcs } = await window.cleanDocumentForPublish();
-
-  const images = await Promise.all(
-    originalSrcs.map(async (src) => {
-      if (!src) return null;
-
-      if (src.startsWith("data:image")) {
-        return src;
-      }
-
-      try {
-        const resp = await fetch(src);
-        const blob = await resp.blob();
-        return "data:image/jpeg;base64," + (await blobToBase64(blob));
-      } catch {
-        return null;
-      }
-    })
-  );
-
-  const payload = {
-    url: window.location.pathname,   // ⭐ save the link
-    siteName,
-    cleanedHTML,
-    images,
-    timestamp: Date.now()
-  };
-
-  localStorage.setItem(LOCAL_KEY, JSON.stringify(payload));
-
-  if (!silent) alert("Saved locally for 24 hours.");
-}
-
-
-function loadLocalBackup() {
-  const raw = localStorage.getItem(LOCAL_KEY);
-  if (!raw) {
-    alert("No saved version found.");
-    return;
-  }
-
-  const data = JSON.parse(raw);
-  const age = Date.now() - data.timestamp;
-
-  if (age > 24 * 60 * 60 * 1000) {
-    alert("Saved version expired (older than 24 hours).");
-    localStorage.removeItem(LOCAL_KEY);
-    return;
-  }
-
-  // If we are NOT on the saved URL → navigate there
-  if (window.location.pathname !== data.url) {
-    sessionStorage.setItem("editor_autoload", "1");
-    window.location.href = data.url;
-    return;
-  }
-
-  // If we ARE already on the saved URL → restore immediately
-  restoreBackupContent(data);
-}
-
-
-function restoreBackupContent(data) {
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(data.cleanedHTML, "text/html");
-
-  // Replace only the body
-  document.body.innerHTML = doc.body.innerHTML;
-
-  // Restore images
-  const imgs = document.querySelectorAll("img");
-  imgs.forEach((img, i) => {
-    if (data.images[i]) img.src = data.images[i];
-  });
-
-  // Restore site name
-  const nameEl = editorQuery("#SiteName") || document.getElementById("SiteName");
-  if (nameEl) nameEl.value = data.siteName || "";
-
-  // Recreate editor UI
-  createShadowEditorUI();
-  initializeEditor();
-
-  alert("Loaded saved version.");
-}
-
 
 /* =========================
    Clerk Loader + Bootstrap
    ========================= */
 
-async function loadClerkScript(publishableKey) {
+async function loadClerkScript(publishableKey, timeoutMs = 8000) {
   return new Promise((resolve, reject) => {
     if (window.Clerk) {
       resolve(window.Clerk);
@@ -362,25 +106,82 @@ async function loadClerkScript(publishableKey) {
     script.crossOrigin = "anonymous";
     script.setAttribute("data-clerk-publishable-key", publishableKey);
 
+    let settled = false;
+    const onResolve = () => {
+      if (settled) return;
+      settled = true;
+      resolve(window.Clerk || null);
+    };
+    const onReject = (err) => {
+      if (settled) return;
+      settled = true;
+      reject(err);
+    };
+
     script.onload = async () => {
       try {
         if (typeof Clerk?.load === "function") {
           await Clerk.load();
         }
-        resolve(window.Clerk);
+        onResolve();
       } catch (err) {
         console.error("Clerk.load() failed:", err);
-        resolve(window.Clerk || null);
+        onResolve();
       }
     };
 
     script.onerror = (err) => {
       console.error("Failed to load Clerk script:", err);
-      reject(err);
+      onReject(err);
     };
 
     document.head.appendChild(script);
+
+    setTimeout(() => {
+      if (!settled) {
+        // Timeout: resolve with whatever exists (maybe null)
+        settled = true;
+        resolve(window.Clerk || null);
+      }
+    }, timeoutMs);
   });
+}
+
+/** ensureClerk: waits for Clerk to be available, attempts to load if missing */
+async function ensureClerk() {
+  if (typeof Clerk !== "undefined" && Clerk) {
+    try {
+      if (typeof Clerk.load === "function") await Clerk.load();
+    } catch (e) {
+      // ignore
+    }
+    return Clerk;
+  }
+
+  // Try to load Clerk script (non-blocking if CDN fails)
+  try {
+    await loadClerkScript("pk_live_Y2xlcmsuaWRlYWdvLmllJA");
+  } catch (err) {
+    console.warn("Clerk script failed to load; continuing without Clerk.");
+  }
+
+  // Wait a short while for Clerk to initialize
+  const start = Date.now();
+  const timeout = 5000;
+  while (typeof Clerk === "undefined" && Date.now() - start < timeout) {
+    // eslint-disable-next-line no-await-in-loop
+    await new Promise((r) => setTimeout(r, 50));
+  }
+
+  if (typeof Clerk !== "undefined" && Clerk && typeof Clerk.load === "function") {
+    try {
+      await Clerk.load();
+    } catch (e) {
+      // ignore
+    }
+  }
+
+  return window.Clerk || null;
 }
 
 /* =========================
@@ -698,7 +499,6 @@ function openImageEditor(targetImg, uploadedSrc) {
         }
 
         targetImg.src = dataURL;
-        scheduleAutosave();
         overlay.remove();
         hint.remove();
       };
@@ -718,7 +518,7 @@ function openImageEditor(targetImg, uploadedSrc) {
    ========================= */
 
 function enableTextEditing() {
-   const editableSelectors = [
+  const editableSelectors = [
     ".business_name",
     ".tagline",
     ".about_us p",
@@ -737,10 +537,9 @@ function enableTextEditing() {
 
   elements.forEach((el) => {
     if (el.closest && el.closest(".sidebar")) return;
-     
+
     el.classList.add("editable-text");
     el.style.cursor = "text";
-    el.addEventListener("input", scheduleAutosave);
 
     el.addEventListener("click", (e) => {
       e.stopPropagation();
@@ -780,55 +579,93 @@ function destroyOwlControls() {
    UI Rebinding + Minify
    ========================= */
 
+function Minify() {
+  const opened = editorQuery("#openedUI");
+  const closed = editorQuery("#closedUI");
+  if (!closed) return;
+
+  const current = getComputedStyle(closed).display;
+  if (current === "block") {
+    closed.style.display = "none";
+    if (opened) opened.style.display = "block";
+  } else {
+    closed.style.display = "block";
+    if (opened) opened.style.display = "none";
+  }
+}
+
 function rebindButtons() {
-  const toggleTab = editorQuery("#toggleTab");
-  const collapseBtn = editorQuery("#collapseBtn");
-  const contentArea = editorQuery("#contentArea");
-  const arrow = editorQuery("#arrow");
-
+  const minifyBtn = editorQuery("#minifyBtn");
+  const unminifyBtn = editorQuery("#unminifyBtn");
   const uploadBtn = editorQuery("#UploadBtn");
-  const nameEl = editorQuery("#SiteName");
 
-  // Slide panel open/close
-  toggleTab?.addEventListener("click", Minify);
+  minifyBtn?.addEventListener("click", Minify);
+  unminifyBtn?.addEventListener("click", Minify);
 
-  // Collapse inner content
-  collapseBtn?.addEventListener("click", () => {
-    const hidden = contentArea.classList.toggle("hidden");
-    arrow.classList.toggle("rotated");
-  });
-
-  // Autosave on name change
-  nameEl?.addEventListener("input", scheduleAutosave);
-
-  // Upload button (same logic as before)
-  uploadBtn?.addEventListener("click", async () => {
-    const nameEl = editorQuery("#SiteName");
-    if (!nameEl || nameEl.value.trim().length < 3) {
+  uploadBtn?.addEventListener("click", async (e) => {
+    const stripeModal = document.getElementById("stripePaymentModal");
+    const nameEl = editorQuery("#SiteName") || document.getElementById("SiteName");
+    if (!nameEl || (nameEl.value || "").trim().length < 3) {
       alert("Please enter a site name (at least 3 characters).");
       return;
     }
 
-    // Stripe modal logic stays the same
-    const stripeModal = document.getElementById("stripePaymentModal");
     if (stripeModal && window.stripe) {
       openPaymentModal();
-      return;
+      if (paymentMessage) paymentMessage.textContent = "Preparing payment...";
+      if (confirmBtn) confirmBtn.disabled = false;
+
+      try {
+        const resp = await fetch("/api/stripe/create-subscription-intent", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            siteName: nameEl.value.trim(),
+            clerkId: window.Clerk?.user?.id || null,
+          }),
+        });
+
+        const data = await resp.json();
+        if (!resp.ok) throw new Error(data.message || "Failed to create subscription intent");
+
+        const clientSecret = data.client_secret;
+        if (!clientSecret) throw new Error("No client secret returned");
+
+        window._stripeClientSecret = clientSecret;
+
+        if (!window.stripe) {
+          if (paymentError) {
+            paymentError.textContent = "Stripe failed to load. Disable ad‑blockers or try another browser.";
+            paymentError.style.display = "block";
+          }
+          return;
+        }
+
+        await new Promise((r) => setTimeout(r, 75));
+
+        window._stripeElements = window.stripe.elements({
+          clientSecret,
+          appearance: { theme: "stripe" },
+        });
+
+        const mountPoint = document.getElementById("payment-element");
+        if (mountPoint) mountPoint.innerHTML = "";
+
+        const paymentElement = window._stripeElements.create("payment");
+        paymentElement.mount("#payment-element");
+
+        if (paymentMessage) paymentMessage.textContent = "Enter card details to confirm payment.";
+      } catch (err) {
+        if (paymentError) {
+          paymentError.textContent = err.message || "Could not start payment";
+          paymentError.style.display = "block";
+        }
+        if (paymentMessage) paymentMessage.textContent = "A monthly subscription is required to publish.";
+      }
+    } else {
+      await publish();
     }
-
-    await publish();
   });
-}
-
-
-function Minify() {
-  const panel = editorQuery("#sidePanel");
-  const toggleTab = editorQuery("#toggleTab");
-
-  if (!panel || !toggleTab) return;
-
-  const isOpen = panel.classList.toggle("open");
-  toggleTab.textContent = isOpen ? "◀" : "▶";
 }
 
 /* =========================
@@ -836,18 +673,11 @@ function Minify() {
    ========================= */
 
 window.cleanDocumentForPublish = async function cleanDocumentForPublish() {
-  // Clone the whole document so we can safely mutate it
   const docClone = document.documentElement.cloneNode(true);
 
-  // Remove only elements that have the id "Revove"
-  // (querySelectorAll supports multiple matches even though id is normally unique)
+  // Remove elements with id="Remove" (typo in original code fixed)
   docClone.querySelectorAll("#Remove").forEach(n => n.remove());
 
-  // If you previously removed scripts except RequiredScript, we no longer do that.
-  // However, if you want to remove script elements that specifically have id="Revove",
-  // the line above already removed them because it targets any element with that id.
-
-  // Clean attributes and editing helpers from all remaining elements
   const allElements = docClone.querySelectorAll("*");
   allElements.forEach(el => {
     el.removeAttribute("contenteditable");
@@ -861,7 +691,6 @@ window.cleanDocumentForPublish = async function cleanDocumentForPublish() {
     el.classList.remove("editable-text", "lazyload--placeholder");
   });
 
-  // Ensure head exists and that style.css is linked
   let head = docClone.querySelector("head");
   if (!head) {
     head = document.createElement("head");
@@ -876,7 +705,6 @@ window.cleanDocumentForPublish = async function cleanDocumentForPublish() {
     head.appendChild(link);
   }
 
-  // Collect image srcs and rewrite src attributes to images/img_X.jpg
   const imgs = Array.from(docClone.querySelectorAll("img"));
   const originalSrcs = imgs.map(img => img.getAttribute("src") || "");
 
@@ -892,7 +720,6 @@ window.cleanDocumentForPublish = async function cleanDocumentForPublish() {
   const cleanedHTML = "<!DOCTYPE html>\n" + docClone.outerHTML;
   return { cleanedHTML, originalSrcs };
 };
-
 
 function setUploadButtonState(state) {
   const btn = editorQuery("#UploadBtn") || document.getElementById("UploadBtn");
@@ -912,10 +739,6 @@ function setUploadButtonState(state) {
     btn.disabled = false;
   }
 }
-
-/**
- * Helpers used by publish()
- */
 
 /** Derive a safe template/folder name from the current URL (fallback if none) */
 function getTemplateNameFromUrl(fallbackName = "DogGroomer") {
@@ -958,7 +781,6 @@ function filenameFromUrl(url, fallback) {
 async function collectCssFiles() {
   const cssFiles = [];
 
-  // External link tags (preserve order)
   const links = Array.from(document.querySelectorAll('link[rel="stylesheet"]'));
   await Promise.all(
     links.map(async (link, i) => {
@@ -986,14 +808,12 @@ async function collectCssFiles() {
     })
   );
 
-  // Inline <style> blocks
   const inlineStyles = Array.from(document.querySelectorAll("style"));
   inlineStyles.forEach((st, i) => {
     const text = st.textContent || "";
     if (text.trim()) cssFiles.push({ path: `css/inline_${i + 1}.css`, content: text });
   });
 
-  // Fallback to style.css if nothing collected
   if (cssFiles.length === 0) {
     try {
       const resp = await fetch("style.css");
@@ -1013,7 +833,6 @@ async function collectCssFiles() {
 async function collectJsFiles() {
   const jsFiles = [];
 
-  // External script tags (preserve order)
   const scripts = Array.from(document.querySelectorAll('script[src]'));
   await Promise.all(
     scripts.map(async (script, i) => {
@@ -1042,7 +861,6 @@ async function collectJsFiles() {
     })
   );
 
-  // Inline scripts (non-src)
   const inlineScripts = Array.from(document.querySelectorAll("script:not([src])"));
   inlineScripts.forEach((s, i) => {
     const text = s.textContent || "";
@@ -1059,16 +877,14 @@ window.publish = async function publish() {
 
     const { cleanedHTML, originalSrcs } = await window.cleanDocumentForPublish();
     const nameEl = editorQuery("#SiteName") || document.getElementById("SiteName");
-    const nameValue = nameEl?.value?.trim() || "";
+    const nameValue = (nameEl?.value || "").trim();
     if (nameValue.length < 3) {
       setUploadButtonState();
       return;
     }
 
-    // Collect CSS and JS files (external + inline)
     const [cssFiles, jsFiles] = await Promise.all([collectCssFiles(), collectJsFiles()]);
 
-    // Fetch images (same logic as before)
     const imageFiles = await Promise.all(
       originalSrcs.map(async (src, index) => {
         if (!src) return null;
@@ -1104,11 +920,6 @@ window.publish = async function publish() {
 
     const validimages = imageFiles.filter(Boolean);
 
-    // Build files array:
-    // - index.html (root)
-    // - css/* (folder)
-    // - js/* (folder)
-    // - images/*
     const files = [
       { path: "index.html", content: cleanedHTML },
       ...cssFiles,
@@ -1116,7 +927,6 @@ window.publish = async function publish() {
       ...validimages,
     ];
 
-    // Optional: also include a top-level style.css for backward compatibility if present
     if (!cssFiles.some((f) => f.path === "style.css")) {
       try {
         const resp = await fetch("style.css");
@@ -1136,24 +946,14 @@ window.publish = async function publish() {
       return;
     }
 
-    // Derive template/folder name from URL (replaces hardcoded "DogGroomer")
     const templateName = getTemplateNameFromUrl("DogGroomer");
 
-    // If you want the server to store everything under a template subfolder,
-    // you can prefix file paths with `${templateName}/` here before upload.
-    // Example (uncomment to enable):
-    // const filesWithPrefix = files.map(f => ({ ...f, path: `${templateName}/${f.path}` }));
-    // await uploadProject(filesWithPrefix, nameValue, window.Clerk?.user?.id, templateName);
-     // Prefix all file paths with the template folder
-const filesWithPrefix = files.map(f => ({
-  ...f,
-  path: `${templateName}/${f.path}`
-}));
+    // Prefix all file paths with the template folder
+    const filesWithPrefix = files.map(f => ({ ...f, path: `${templateName}/${f.path}` }));
 
-await uploadProject(files, nameValue, window.Clerk?.user?.id, templateName);
+    await uploadProject(files, nameValue, window.Clerk?.user?.id, templateName);
 
-
-    console.log("Publish: uploadProject invoked with", files.length, "files.");
+    console.log("Publish: uploadProject invoked with", filesWithPrefix.length, "files.");
     alert("Publish initiated. Check console for upload response.");
 
     setUploadButtonState("uploaded");
@@ -1165,21 +965,26 @@ await uploadProject(files, nameValue, window.Clerk?.user?.id, templateName);
 };
 
 async function uploadProject(files, name, ID, template) {
-  const res = await fetch("/api/github/upload", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ files, name, ID, template }),
-  });
+  try {
+    const res = await fetch("/api/github/upload", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ files, name, ID, template }),
+    });
 
-  const data = await res.json();
-  console.log("uploadProject response:", data);
+    const data = await res.json();
+    console.log("uploadProject response:", data);
 
-  if (data.error === "Repo limit reached. Maximum of 2 repos allowed.") {
-    alert("You have reached the maximum of 2 published sites.\nDelete one to publish a new one.");
-    throw new Error("Repo limit reached");
+    if (data?.error === "Repo limit reached. Maximum of 2 repos allowed.") {
+      alert("You have reached the maximum of 2 published sites.\nDelete one to publish a new one.");
+      throw new Error("Repo limit reached");
+    }
+
+    return data;
+  } catch (err) {
+    console.error("uploadProject failed:", err);
+    throw err;
   }
-
-  return data;
 }
 
 /* =========================
@@ -1189,10 +994,6 @@ async function uploadProject(files, name, ID, template) {
 let stripe = null;
 window._stripeElements = null;
 window._stripeClientSecret = null;
-window.addEventListener("beforeunload", () => {
-  saveLocalBackup(true);
-});
-
 
 const STRIPE_PUBLISHABLE_KEY =
   "pk_test_51SmbYSRqySo1SbUl9zUatOFdeP2eN1jYSDT4gNWFjzDaPLMF4QaeXONAJ9Ii2QVz7Bugnhp11UFCCFyg625JGGGu00uMAvRXJq";
@@ -1212,9 +1013,6 @@ function openPaymentModal() {
 function closePaymentModal() {
   if (modal) modal.style.display = "none";
 }
-
-if (closeBtn) closeBtn.addEventListener("click", closePaymentModal);
-if (cancelBtn) cancelBtn.addEventListener("click", closePaymentModal);
 
 async function loadStripeModule() {
   try {
@@ -1297,11 +1095,7 @@ if (confirmBtn) {
    ========================= */
 
 function initializeEditor() {
-  // Ensure new editor UI exists
-  const hasPanel =
-    editorQuery("#sidePanel") || editorQuery("#toggleTab");
-
-  if (!hasPanel) {
+  if (!editorQuery("#closedUI") && !editorQuery("#openedUI")) {
     console.warn("Editor UI not found — skipping editor initialization.");
     return;
   }
@@ -1312,26 +1106,273 @@ function initializeEditor() {
   rebindButtons();
 }
 
-
 async function waitForEditorUI(timeout = 5000) {
   const start = Date.now();
   while (Date.now() - start < timeout) {
     if (editorQuery("#closedUI") || editorQuery("#openedUI")) return true;
+    // eslint-disable-next-line no-await-in-loop
     await new Promise((r) => setTimeout(r, 100));
   }
   return false;
 }
 
+/* =========================
+   Repo utilities and sync
+   ========================= */
+
+async function fetchUserRepos(userId) {
+  try {
+    const res = await fetch("/api/repos", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ID: userId }),
+      cache: "no-store"
+    });
+
+    if (!res.ok) {
+      console.warn("fetchUserRepos: non-ok response");
+      return [];
+    }
+
+    const data = await res.json();
+    return data.repos || [];
+  } catch (err) {
+    console.warn("fetchUserRepos failed:", err);
+    return [];
+  }
+}
+
+function findRepoForTemplate(repos, template) {
+  return repos.find(r => r.template === template);
+}
+
+/* Use the requested selectors including h5 and h6 */
+const selectors = ["img", "h1", "h2", "h3", "h4", "h5", "h6", "p", "span"];
+
+async function syncTemplateContentMobileSafe(repo, branch = "main", entry = "index.html") {
+  const base = `https://raw.githubusercontent.com/Puff3r-Ruff/${repo}/${branch}/`;
+  const bust = `?v=${Date.now()}`;
+
+  const htmlRes = await fetch(base + entry + bust, {
+    cache: "no-store",
+    mode: "cors"
+  });
+
+  if (!htmlRes.ok) throw new Error("Failed to load repo HTML");
+
+  const html = await htmlRes.text();
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(html, "text/html");
+
+  selectors.forEach(selector => {
+    const repoEls = [...doc.querySelectorAll(selector)];
+    const pageEls = [...document.querySelectorAll(selector)];
+
+    repoEls.forEach((repoEl, i) => {
+      const pageEl = pageEls[i];
+      if (!pageEl) return;
+
+      if (selector === "img") {
+        let src = repoEl.getAttribute("src");
+        if (src && !src.startsWith("http") && !src.startsWith("//")) {
+          src = base + src + bust;
+        }
+        if (src) pageEl.src = src;
+      } else {
+        pageEl.innerHTML = repoEl.innerHTML;
+      }
+    });
+  });
+
+  // Wait for editor UI and set SiteName safely
+  await waitForEditorUI(2000);
+  const siteNameEl = editorQuery("#SiteName") || document.getElementById("SiteName");
+  if (siteNameEl) siteNameEl.value = repo;
+}
+
+/* =========================
+   COOLDOWN SYSTEM
+   ========================= */
+
+function showCooldownOverlay(secondsLeft) {
+  let overlay = document.getElementById("cooldownOverlay");
+  if (!overlay) {
+    overlay = document.createElement("div");
+    overlay.id = "cooldownOverlay";
+    overlay.style.position = "fixed";
+    overlay.style.left = 0;
+    overlay.style.top = 0;
+    overlay.style.right = 0;
+    overlay.style.bottom = 0;
+    overlay.style.display = "flex";
+    overlay.style.alignItems = "center";
+    overlay.style.justifyContent = "center";
+    overlay.style.background = "rgba(0,0,0,0.6)";
+    overlay.style.color = "#fff";
+    overlay.style.zIndex = 3147483647;
+    overlay.style.fontSize = "18px";
+    document.body.appendChild(overlay);
+  }
+  overlay.textContent = `Updating. Please allow up to 2 minutes`;
+  overlay.style.display = "flex";
+}
+
+function hideCooldownOverlay() {
+  const overlay = document.getElementById("cooldownOverlay");
+  if (overlay) overlay.style.display = "none";
+}
+
+async function waitForUpdateCooldown(lastUpdated) {
+  const TWO_MIN = 2 * 60 * 1000;
+  const now = Date.now();
+  const elapsed = now - lastUpdated;
+
+  if (elapsed >= TWO_MIN) return;
+
+  const waitTime = TWO_MIN - elapsed;
+  let remaining = Math.ceil(waitTime / 1000);
+
+  showCooldownOverlay(remaining);
+
+  return new Promise(resolve => {
+    const interval = setInterval(() => {
+      remaining -= 1;
+      if (remaining <= 0) {
+        clearInterval(interval);
+        hideCooldownOverlay();
+        resolve();
+      } else {
+        showCooldownOverlay(remaining);
+      }
+    }, 1000);
+  });
+}
+
+/* =========================
+   MAIN REPO LOADING FLOW
+   ========================= */
+
+window.addEventListener("DOMContentLoaded", () => {
+  (async () => {
+    try {
+      await ensureClerk();
+    } catch (err) {
+      console.error("Initial ensureClerk failed:", err);
+    }
+  })();
+
+  (async () => {
+    try {
+      // Prevent infinite reload loops: only add fresh param if not present
+      const url = new URL(window.location.href);
+      if (!sessionStorage.getItem("freshLoad") && !url.searchParams.has("fresh")) {
+        sessionStorage.setItem("freshLoad", "1");
+        url.searchParams.set("fresh", Date.now().toString());
+        window.location.replace(url.toString());
+        return;
+      }
+
+      await ensureClerk();
+
+      // Wait briefly for Clerk.user to be available (but don't block forever)
+      let authUserId = null;
+      const maxAttempts = 20;
+      for (let i = 0; i < maxAttempts; i++) {
+        if (window.Clerk?.user?.id) {
+          authUserId = window.Clerk.user.id;
+          break;
+        }
+        // eslint-disable-next-line no-await-in-loop
+        await new Promise(r => setTimeout(r, 150));
+      }
+
+      if (!authUserId) {
+        // If Clerk not available, redirect to home as a safe fallback
+        window.location.href = "/";
+        return;
+      }
+
+      const currentUrl = new URL(window.location.href);
+      const repo = currentUrl.searchParams.get("repo");
+      const templateFromUrl = currentUrl.searchParams.get("template");
+      const userIdFromUrl = currentUrl.searchParams.get("userId");
+
+      if (!userIdFromUrl || authUserId !== userIdFromUrl) {
+        window.location.href = "/";
+        return;
+      }
+
+      if (!repo) {
+        window.location.href = "/";
+        return;
+      }
+
+      const res = await fetch("/api/repos", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ID: authUserId }),
+        cache: "no-store"
+      });
+
+      if (!res.ok) {
+        console.error("Failed to fetch repos");
+        window.location.href = "/";
+        return;
+      }
+
+      const data = await res.json();
+      const repos = data.repos || [];
+
+      const match = repos.find(r => r.repo === repo);
+      if (!match) {
+        window.location.href = "/";
+        return;
+      }
+
+      const templateFromDB = match.template;
+
+      if (templateFromDB && templateFromDB !== templateFromUrl) {
+        const params = new URLSearchParams({
+          repo,
+          userId: authUserId,
+          template: templateFromDB
+        });
+
+        window.location.href = `/Template/${templateFromDB}/${templateFromDB}.html?${params.toString()}`;
+        return;
+      }
+
+      if (match.lastUpdated) {
+        try {
+          await waitForUpdateCooldown(match.lastUpdated);
+        } catch (err) {
+          console.warn("Cooldown wait interrupted:", err);
+        }
+      }
+
+      try {
+        await syncTemplateContentMobileSafe(repo);
+      } catch (err) {
+        console.error("Failed to sync template content:", err);
+      }
+    } catch (err) {
+      console.error("Main repo loading flow failed:", err);
+      window.location.href = "/";
+    }
+  })();
+});
+
+/* =========================
+   Boot
+   ========================= */
+
 (async function boot() {
-  // Wait for DOM ready
   if (document.readyState === "loading") {
     await new Promise((r) => document.addEventListener("DOMContentLoaded", r));
   }
 
-  // Create shadow UI early
   createShadowEditorUI();
 
-  // Load Clerk
   try {
     await loadClerkScript("pk_live_Y2xlcmsuaWRlYWdvLmllJA");
     console.log("Clerk loaded and ready (editor.js).");
@@ -1339,37 +1380,13 @@ async function waitForEditorUI(timeout = 5000) {
     console.warn("Clerk script failed to load; continuing without Clerk.");
   }
 
-  // Load Stripe in background
   loadStripeModule().catch((err) => console.warn("Stripe background load failed:", err));
 
-  // ============================
-  // AUTOLOAD BLOCK (corrected)
-  // ============================
-if (sessionStorage.getItem("editor_autoload") === "1") {
-  sessionStorage.removeItem("editor_autoload");
-
-  const raw = localStorage.getItem(LOCAL_KEY);
-  if (!raw) return;
-
-  const data = JSON.parse(raw);
-
-  // Check expiration
-  const age = Date.now() - data.timestamp;
-  if (age > 24 * 60 * 60 * 1000) {
-    localStorage.removeItem(LOCAL_KEY);
+  const found = await waitForEditorUI(2000);
+  if (!found) {
+    console.warn("Editor UI not found after wait — skipping editor initialization.");
     return;
   }
 
-  // Only restore if URL matches
-  if (data.url === window.location.pathname) {
-    restoreBackupContent(data);
-
-    // After restoring, recreate Shadow UI
-    createShadowEditorUI();
-  }
-}
-
-
-  // Initialize editor AFTER autoload
   initializeEditor();
 })();
