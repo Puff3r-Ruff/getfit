@@ -2,10 +2,10 @@
 <html lang="en"><head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Bridal Boutique</title>
+<title>Paws &amp; Shine Grooming</title>
 
-<!-- PREMIUM FONTS -->
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&amp;family=Lora:wght@400;500&amp;display=swap" rel="stylesheet">
+<!-- ⭐ Professional Font Added -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet">
 
 <script>
 
@@ -132,418 +132,402 @@ async function loadProducts() {
 </script>
 
 <style>
-/* GLOBAL */
-html {
-    scroll-behavior: smooth;
-}
-
+/* ---------------- GLOBAL ---------------- */
 body {
-    margin: 0;
-    font-family: "Lora", serif;
-    background-color: #faf7f5;
-    color: #4a3f3b;
+  margin: 0;
+  font-family: "Inter", sans-serif;
+  background: #f8fafc;
+  color: #333;
 }
 
 h1, h2, h3 {
-    font-family: "Playfair Display", serif;
+  font-weight: 600;
 }
 
-/* -------------------------------------- */
-/* NAVIGATION */
-/* -------------------------------------- */
+a {
+  text-decoration: none;
+  color: inherit;
+}
 
+/* ---------------- NAV ---------------- */
 nav {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: 12px 15px;
-    background: #222;
-    position: sticky;
-    top: 0;
-    z-index: 10;
-    animation: navFade 1.2s ease forwards;
+  position: fixed;
+  top: 0;
+  width: 100%;
+  padding: 2px 8%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: white;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+  z-index: 1000;
 }
 
-@keyframes navFade {
-    from { opacity: 0; transform: translateY(-20px); }
-    to { opacity: 1; transform: translateY(0); }
+nav .logo {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: #4a90e2;
 }
 
-nav h1 {
-    font-size: 2rem;
-    letter-spacing: 3px;
-    color: #F7B161;
-    margin: 0;
-    position: relative;
-    padding: 0 25px;
-    animation: titleGlow 2s ease forwards;
+/* ---------------- HERO ---------------- */
+.hero {
+  position: relative;
+  height: 90vh;
+  width: 100%;
+  overflow: hidden;
 }
 
-@keyframes titleGlow {
-    from { letter-spacing: 1px; opacity: 0.5; }
-    to { letter-spacing: 3px; opacity: 1; }
+.hero img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
-/* Rose‑gold gradient lines */
-nav h1::before,
-nav h1::after {
-    content: "";
-    position: absolute;
-    top: 50%;
-    width: 15px;
-    height: 2px;
-    background: linear-gradient(to right, #F7B161, #fff);
+.hero-content {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 80%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  color: white;
+  max-width: 700px;
+  padding: 30px;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(6px);
+  border-radius: 1.3rem;
 }
 
-nav h1::before { left: -5px; }
-nav h1::after { right: -5px; }
-
-/* -------------------------------------- */
-/* HERO SECTION */
-/* -------------------------------------- */
-
-#hero {
-    position: relative;
-    width: 100%;
-    height: 90vh;
-    overflow: hidden;
-    pointer-events: none;
+.hero-content h1 {
+  font-size: 3.5rem;
 }
 
-#hero img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-    animation: slowZoom 12s ease-in-out infinite alternate;
-    pointer-events: fill;
+.hero-content p {
+  font-size: 1.2rem;
+  margin: 20px 0;
 }
 
-@keyframes slowZoom {
-    from { transform: scale(1); }
-    to { transform: scale(1.08); }
+.hero-content button {
+  padding: 15px 40px;
+  background: #4a90e2;
+  border: none;
+  color: white;
+  font-size: 1.1rem;
+  border-radius: 40px;
+  cursor: pointer;
+  transition: 0.3s;
 }
 
-/* Cinematic gradient overlay */
-#hero::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(
-        to bottom,
-        rgba(0,0,0,0.2),
-        rgba(0,0,0,0.55)
-    );
-    z-index: 1;
+.hero-content button:hover {
+  background: #3a78c2;
 }
 
-/* Hero text */
-#hero-text {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    text-align: center;
-    z-index: 2;
-    max-width: 700px;
-    padding: 20px;
-    background: rgba(0, 0, 0, 0.55);
-    border-radius: 6px;
-    width: 85%;
-    animation: fadeInHero 1.5s ease forwards;
-    pointer-events: fill;
-}
-
-@keyframes fadeInHero {
-    from { opacity: 0; transform: translate(-50%, -40%); }
-    to { opacity: 1; transform: translate(-50%, -50%); }
-}
-
-#hero-text h2 {
-    font-size: 60px;
-    margin: 0 0 20px;
-    color: #fff;
-}
-
-#hero-text p {
-    font-size: 20px;
-    line-height: 1.6;
-    color: #fff;
-}
-
-/* Optional CTA button */
-#hero-text a {
-    display: inline-block;
-    margin-top: 15px;
-    padding: 12px 28px;
-    background: #F7B161;
-    color: #222;
-    text-decoration: none;
-    font-size: 18px;
-    border-radius: 4px;
-    transition: 0.3s ease;
-}
-
-#hero-text a:hover {
-    background: #fff;
-    color: #000;
-}
-
-/* -------------------------------------- */
-/* ABOUT SECTION */
-/* -------------------------------------- */
-
+/* ---------------- ABOUT ---------------- */
 #about {
-    padding: 50px 0;
+  padding: 60px 20px;
+  background: #63AEFF;
+  border-top: 1px solid #d6e8ff;
+  border-bottom: 1px solid #d6e8ff;
+  display: flex;
+  justify-content: center;
+  color: #333;
+}
+
+.about-container {
+  max-width: 750px;
+  text-align: left;
+  background: white;
+  padding: 40px 30px;
+  box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+}
+
+.about-title {
+  font-size: 2.5rem;
+  margin-bottom: 20px;
+  color: #000;
+}
+
+.about-text {
+  font-size: 1.2rem;
+  line-height: 1.7;
+  margin-bottom: 30px;
+  opacity: 0.9;
+  color: #000;
+}
+
+#about-btn {
+  padding: 12px 28px;
+  font-size: 1rem;
+  border: none;
+  border-radius: 30px;
+  background: #000;
+  color: white;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+#about-btn:hover {
+  background: #3a78c2;
+  transform: translateY(-2px);
+}
+
+/* ---------------- SERVICES ---------------- */
+.services {
+  padding: 50px 8%;
     text-align: center;
-    background-color: #fff;
-    width: 100%;
-    border-top: solid #F7B161 2px;
-    border-bottom: solid #F7B161 2px;
-}
-
-#about h2 {
-    font-size: 42px;
-    color: #000;
-    margin-bottom: 10px;
-}
-
-/* Decorative divider */
-#about h2::after {
-    content: "";
-    display: block;
-    width: 80px;
-    height: 3px;
-    background: #F7B161;
-    margin: 12px auto 25px;
-    border-radius: 2px;
-}
-
-#about p {
-    font-size: 18px;
-    line-height: 1.7;
-    color: #000;
-    max-width: 55%;
-    margin: 0 auto;
-}
-
-/* -------------------------------------- */
-/* GALLERY */
-/* -------------------------------------- */
-
-#gallery {
-    padding: 15px 40px;
-    background: #222;
-}
-
-#gallery h2 {
-    text-align: center;
-    font-size: 42px;
-    color: #F7B161;
-    margin-bottom: 40px;
-}
-
-.gallery-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 20px;
-    max-width: 1200px;
-    margin: auto;
-}
-
-.gallery-grid img {
-    width: 100%;
-    object-fit: cover;
-    border-radius: 6px;
-    box-shadow: 0 6px 18px rgba(0,0,0,0.08);
-    transition: transform 0.3s ease, opacity 0.3s ease;
-}
-
-.gallery-grid img:hover {
-    transform: scale(1.03);
-    opacity: 0.9;
-}
-
-/* -------------------------------------- */
-/* SIGN-UP SECTION */
-/* -------------------------------------- */
-
-#signup {
-    background: #fff7f0;
-    padding: 60px 20px;
-    text-align: center;
-    border-top: 2px solid #F7B161;
-    border-bottom: 2px solid #F7B161;
-}
-
-#signup h2 {
-    font-size: 38px;
-    color: #000;
-    margin-bottom: 10px;
-}
-
-#signup p {
-    font-size: 18px;
-    color: #4a3f3b;
-    margin-bottom: 25px;
-}
-
-#signup form {
-    display: flex;
-    justify-content: center;
-    gap: 10px;
-    flex-wrap: wrap;
-}
-
-#signup input {
-    padding: 12px 15px;
-    width: 280px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    font-size: 16px;
-}
-
-#signup button {
-    padding: 12px 25px;
-    background: #F7B161;
-    border: none;
-    color: #222;
-    font-size: 18px;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: 0.3s ease;
-}
-
-#signup button:hover {
     background: #fff;
     color: #000;
-    border: 1px solid #F7B161;
 }
 
-/* -------------------------------------- */
-/* CONTACT SECTION */
-/* -------------------------------------- */
-
-#contact {
-    background: #222;
-    padding: 60px 20px;
-    text-align: center;
-}
-
-#contact h2 {
-    font-size: 42px;
-    color: #fff;
-    margin-bottom: 20px;
-}
-
-.contact-grid {
+.services-grid {
+  margin-top: 50px;
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 30px;
-    margin: 0 auto 30px;
-}
-
-#contact h3 {
-    color: #fff;
-    font-size: 22px;
-    margin-bottom: 10px;
-}
-
-#contact p {
-    font-size: 18px;
-    color: #fff;
-    line-height: 1.6;
-}
-
-.contact-btn {
-    display: inline-block;
-    padding: 12px 30px;
-    background: #F7B161;
-    color: #222;
-    text-decoration: none;
-    font-size: 18px;
-    border-radius: 4px;
-    transition: 0.3s ease;
-}
-
-.contact-btn:hover {
-    background: #fff;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 40px;
     color: #000;
-    border: 1px solid #F7B161;
+  }
+
+.service-card {
+  background: white;
+  border-radius: 15px;
+  padding: 30px;
+  box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+  transition: 0.3s;
 }
 
-/* -------------------------------------- */
-/* FOOTER */
-/* -------------------------------------- */
+.service-card:hover {
+  transform: translateY(-8px);
+}
 
+.service-card img {
+  width: 80px;
+  margin-bottom: 20px;
+}
+
+/* ---------------- INSTAGRAM STYLE SLIDER ---------------- */
+.gallery {
+  padding: 10px 8%;
+  text-align: center;
+}
+
+.slider-container {
+  position: relative;
+  width: 100%;
+  margin-top: 40px;
+}
+
+.slider {
+  display: flex;
+  gap: 20px;
+  overflow-x: auto;
+  scroll-behavior: smooth;
+  scroll-snap-type: x mandatory;
+  padding-bottom: 10px;
+}
+
+.slider::-webkit-scrollbar {
+  display: none;
+}
+
+.slider img {
+  width: 320px;
+  height: 320px;
+  object-fit: cover;
+  border-radius: 15px;
+  flex-shrink: 0;
+  scroll-snap-align: center;
+  transition: transform .3s ease;
+}
+
+.slider img:hover {
+  transform: scale(1.03);
+}
+
+/* ARROWS */
+.slider-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: white;
+  border: none;
+  font-size: 2.5rem;
+  padding: 5px 12px;
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  z-index: 10;
+  transition: 0.2s;
+}
+
+.slider-btn:hover {
+  background: #4a90e2;
+  color: white;
+}
+
+.slider-btn.left {
+  left: -10px;
+}
+
+.slider-btn.right {
+  right: -10px;
+}
+
+@media (max-width: 600px) {
+  .slider img {
+    width: 240px;
+    height: 240px;
+  }
+}
+
+/* ---------------- CONTACT CTA ---------------- */
+.contact-cta {
+  padding: 20px 8%;
+    text-align: center;
+    background: #22E;
+    color: #fff;
+    border-top: 1px solid #d6e8ff;
+}
+
+.contact-cta button {
+  padding: 15px 40px;
+  background: #4a90e2;
+  border: none;
+  color: white;
+  font-size: 1.1rem;
+  border-radius: 40px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.contact-cta button:hover {
+  background: #3a78c2;
+}
+
+/* ---------------- NEWSLETTER ---------------- */
+.newsletter {
+  padding: 70px 8%;
+    text-align: center;
+    background: #63AEFF;
+    border-top: 1px solid #000;
+    border-bottom: 1px solid #000;
+    color: #fff;
+}
+
+.newsletter h2 {
+  font-size: 2.4rem;
+  color: #fff;
+  margin-bottom: 15px;
+}
+
+.newsletter p {
+  font-size: 1.15rem;
+  opacity: 0.9;
+  margin-bottom: 25px;
+}
+
+.newsletter-form {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  flex-wrap: wrap;
+}
+
+.newsletter-form input {
+  padding: 14px 20px;
+  width: 320px;
+  max-width: 90%;
+  border-radius: 30px;
+  border: 1px solid #c9dfff;
+  font-size: 1rem;
+  outline: none;
+  transition: 0.3s;
+}
+
+.newsletter-form input:focus {
+  border-color: #4a90e2;
+  box-shadow: 0 0 0 3px rgba(74,144,226,0.2);
+}
+
+.newsletter-form button {
+  padding: 14px 32px;
+  background: #000;
+  color: white;
+  border: none;
+  border-radius: 30px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.newsletter-form button:hover {
+  background: #3a78c2;
+  transform: translateY(-2px);
+}
+
+.newsletter-success {
+  margin-top: 20px;
+  font-size: 1.1rem;
+  color: #3a78c2;
+  display: none;
+}
+
+
+/* ---------------- FOOTER ---------------- */
 footer {
-    background: #111;
-    color: #eee;
-    text-align: center;
-    padding: 25px 10px;
-    border-top: 2px solid #F7B161;
-    font-size: 16px;
-    letter-spacing: 1px;
+  text-align: center;
+  padding: 30px;
+  background: #f0f6ff;
+  border-top: 1px solid #d6e8ff;
 }
 
-/* -------------------------------------- */
-/* TABLET */
-/* -------------------------------------- */
-
-@media (max-width: 1024px) and (min-width: 481px){
-    #about p { max-width: 70%; }
+/* ---------------- MOBILE ---------------- */
+@media (max-width: 900px) {
+  .hero {
+    height: 70vh;
+  }
 }
 
-/* -------------------------------------- */
-/* MOBILE */
-/* -------------------------------------- */
-
-@media (max-width: 480px){
-    #hero { height: 55vh; }
-    #hero-text { padding: 15px; }
-    #hero-text h2 { font-size: 32px; }
-    #hero-text p { font-size: 16px; }
-
-    #about { padding: 25px 0px; }
-    #about h2,
-    #about p { max-width: 100%; }
-
-    #about p {
-        font-size: 20px;
-        text-align: left;
-        padding: 1rem;
-    }
+@media (max-width: 600px) {
+  .hero {
+    height: 60vh;
+  }
 }
 </style>
+
 <script src="https://cdn.jsdelivr.net/npm/@clerk/clerk-js@latest/dist/clerk.browser.js" async="" crossorigin="anonymous" data-clerk-publishable-key="pk_live_Y2xlcmsuaWRlYWdvLmllJA"></script><script src="https://js.stripe.com/dahlia/stripe.js"></script><link rel="stylesheet" href="style.css"></head>
-
 <body>
-<div id="contain">
 
+<!-- NAV -->
 <nav>
-    <h1 class="" style="cursor: text;">Business Name</h1>
+  <p class="logo" style="cursor: text;">Paws &amp; Shine</p>
 </nav>
 
-<div id="hero">
-    <img src="images/img_0.1778659751297.jpg" alt="Bridal Gown" style="cursor: pointer;">
-    <div id="hero-text">
-        <h2 class="" style="cursor: text;">Comfortable</h2>
-        <p class="" style="cursor: text;">Discover timeless elegance, luxurious fabrics, and handcrafted details designed to make your special day unforgettable.</p>
-        <a href="#about">Book Appointment</a>
-    </div>
-</div>
+<!-- HERO -->
+<section class="hero">
+  <img src="images/img_0.1778660794754.jpg" alt="Pet Grooming" style="cursor: pointer;">
+  <div class="hero-content">
+    <h1 class="" style="cursor: text;">Premium Pet Grooming</h1>
+    <p class="" style="cursor: text;">Gentle care, happy pets, and professional grooming for dogs &amp; cats.</p>
+    <button>Book Now</button>
+  </div>
+</section>
 
+<!-- ABOUT -->
 <section id="about">
-    <h2 class="" style="cursor: text;">About Us</h2>
-    <p class="" style="cursor: text;">
-        Welcome to our bridal boutique — a place where elegance, romance, and timeless beauty come together.
-        Use this space to tell your story: who you are, what inspires your work, and what makes your boutique
-        special. Share your passion, your experience, and the heart behind your business so brides can feel
-        connected the moment they arrive.
+  <div class="about-container">
+    <h2 class="about-title" style="cursor: text;">About Me</h2>
+
+    <p class="about-text" style="cursor: text;">
+      Welcome to Paws &amp; Shine Grooming, where professional grooming meets luxury pet care.
+      We provide a calm, refined environment designed to give your pet a premium grooming experience.
     </p>
+
+    <button id="about-btn">Learn More</button>
+
+    <p id="extra-text" style="display: none; opacity: 0; transition: opacity 0.5s; cursor: text;" class="">
+      From breed‑specific styling to tailored coat and skin care, every service is crafted with precision and comfort.
+    </p>
+  </div>
 </section>
 
 <!-- Store Snippet Start -->
@@ -551,7 +535,7 @@ footer {
   <div class="template-list">
 
     <div class="template-card">
-      <img src="images/img_1.1778659751297.jpg" alt="" style="cursor: pointer;">
+      <img src="images/img_1.1778660794754.jpg" alt="" style="cursor: pointer;">
       <h3 class="" style="cursor: text;">Your Product</h3>
       <p class="" style="cursor: text;">Your Product Description</p>
       <div class="price">€29</div>
@@ -559,7 +543,7 @@ footer {
     </div>
 
     <div class="template-card active">
-      <img src="images/img_2.1778659751297.jpg" alt="" style="cursor: pointer;">
+      <img src="images/img_2.1778660794754.jpg" alt="" style="cursor: pointer;">
       <h3 class="" style="cursor: text;">Your Product</h3>
       <p class="" style="cursor: text;">Your Product Description</p>
       <div class="price">€19</div>
@@ -567,7 +551,7 @@ footer {
     </div>
 
     <div class="template-card">
-      <img src="images/img_3.1778659751297.jpg" alt="" style="cursor: pointer;">
+      <img src="images/img_3.1778660794754.jpg" alt="" style="cursor: pointer;">
       <h3 class="" style="cursor: text;">Your Product</h3>
       <p class="" style="cursor: text;">Your Product Description</p>
       <div class="price">€39</div>
@@ -575,7 +559,7 @@ footer {
     </div>
 
     <div class="template-card">
-      <img src="images/img_4.1778659751297.jpg" alt="" style="cursor: pointer;">
+      <img src="images/img_4.1778660794754.jpg" alt="" style="cursor: pointer;">
       <h3 class="" style="cursor: text;">Your Product</h3>
       <p class="" style="cursor: text;">Your Product Description</p>
       <div class="price">€19</div>
@@ -583,7 +567,7 @@ footer {
     </div>
 
     <div class="template-card">
-      <img src="images/img_5.1778659751297.jpg" alt="" style="cursor: pointer;">
+      <img src="images/img_5.1778660794754.jpg" alt="" style="cursor: pointer;">
       <h3 class="" style="cursor: text;">Your Product</h3>
       <p class="" style="cursor: text;">Your Product Description</p>
       <div class="price">€39</div>
@@ -732,61 +716,144 @@ if (templateNavPrev && templateNavNext) {
 </script>
 <!-- Store Snippet End -->
 
-<section id="gallery">
-    <h2 class="" style="cursor: text;">Our Gallery</h2>
-    <div class="gallery-grid">
-        <img src="images/img_6.1778659751297.jpg" style="cursor: pointer;">
-        <img src="images/img_7.1778659751297.jpg" style="cursor: pointer;">
-        <img src="images/img_8.1778659751297.jpg" style="cursor: pointer;">
-        <img src="images/img_9.1778659751297.jpg" style="cursor: pointer;">
-        <img src="images/img_10.1778659751297.jpg" style="cursor: pointer;">
-        <img src="images/img_11.1778659751297.jpg" style="cursor: pointer;">
-        <img src="images/img_12.1778659751297.jpg" style="cursor: pointer;">
-        <img src="images/img_13.1778659751297.jpg" style="cursor: pointer;">
-    </div>
-</section>
+<!-- GALLERY (INSTAGRAM STYLE SLIDER) -->
+<section id="gallery" class="gallery">
+  <h2 class="" style="cursor: text;">Gallery</h2>
 
-<!-- SIGN-UP SECTION -->
-<section id="signup">
-    <h2 class="" style="cursor: text;">Join Our Bridal Community</h2>
-    <p class="" style="cursor: text;">Be the first to know about new collections, exclusive events, and special appointments.</p>
+  <div class="slider-container">
+    <button class="slider-btn left">❮</button>
 
-    <form>
-        <input type="email" placeholder="Enter your email" required="">
-        <button type="submit">Sign Up</button>
-    </form>
-</section>
-
-<!-- CONTACT SECTION -->
-<section id="contact">
-    <h2 class="" style="cursor: text;">Contact Us</h2>
-
-    <div class="contact-grid">
-        <div>
-            <h3 class="" style="cursor: text;">Visit Us</h3>
-            <p class="" style="cursor: text;">123 Bridal Lane<br>Cork, Co. Cork</p>
-        </div>
-
-        <div>
-            <h3 class="" style="cursor: text;">Hours</h3>
-            <p class="" style="cursor: text;">Mon–Fri: 10am – 6pm<br>Sat: 10am – 4pm<br>Sun: Closed</p>
-        </div>
-
-        <div>
-            <h3 class="" style="cursor: text;">Get In Touch</h3>
-            <p class="" style="cursor: text;">Email: info@bridalboutique.com<br>Phone: <a href="tel:(000) 000‑0000">(000) 000‑0000</a></p>
-        </div>
+    <div class="slider">
+      <img src="images/img_6.1778660794754.jpg" style="cursor: pointer;">
+      <img src="images/img_7.1778660794754.jpg" style="cursor: pointer;">
+      <img src="images/img_8.1778660794754.jpg" style="cursor: pointer;">
+      <img src="images/img_9.1778660794754.jpg" style="cursor: pointer;">
+      <img src="images/img_10.1778660794754.jpg" style="cursor: pointer;">
+      <img src="images/img_11.1778660794754.jpg" style="cursor: pointer;">
     </div>
 
-    <a href="#hero" class="contact-btn">Book Your Appointment</a>
+    <button class="slider-btn right">❯</button>
+  </div>
 </section>
 
+<!-- NEWSLETTER SIGNUP -->
+<section class="newsletter">
+  <h2 class="" style="cursor: text;">Join Our Newsletter</h2>
+  <p class="" style="cursor: text;">Get grooming tips, special offers, and adorable pet updates straight to your inbox.</p>
+
+  <form class="newsletter-form">
+    <input type="email" id="newsletter-email" placeholder="Enter your email" required="">
+    <button type="submit">Subscribe</button>
+  </form>
+
+  <p id="newsletter-success" class="newsletter-success" style="cursor: text;">Thank you for subscribing!</p>
+</section>
+
+
+<!-- SERVICES -->
+<section id="services" class="services">
+  <h2 class="" style="cursor: text;">Our Grooming Services</h2>
+  <div class="services-grid">
+    <div class="service-card">
+      <img src="images/img_12.1778660794754.jpg" style="cursor: pointer;">
+      <h3 class="" style="cursor: text;">Full Groom</h3>
+      <p class="" style="cursor: text;">Bath, haircut, nail trim, ear cleaning &amp; styling.</p>
+    </div>
+    <div class="service-card">
+      <img src="images/img_13.1778660794754.jpg" style="cursor: pointer;">
+      <h3 class="" style="cursor: text;">Bath &amp; Brush</h3>
+      <p class="" style="cursor: text;">Deep clean bath, blow dry &amp; full brushing.</p>
+    </div>
+    <div class="service-card">
+      <img src="images/img_14.1778660794754.jpg" style="cursor: pointer;">
+      <h3 class="" style="cursor: text;">Puppy Intro</h3>
+      <p class="" style="cursor: text;">Gentle grooming for puppies to get them comfortable.</p>
+    </div>
+  </div>
+</section>
+
+
+<!-- CONTACT CTA -->
+<section id="contact" class="contact-cta">
+  <h2 class="" style="cursor: text;">Contact Us</h2>
+  <p class="" style="cursor: text;">We’re here to make your pets look and feel their best.</p>
+
+  <div style="margin-top: 30px; font-size: 1.2rem; line-height: 1.8;">
+    <strong>📞 Phone:</strong> <a href="tel:+353 00 000 0000">+353 00 000 0000</a><br>
+    <strong>📍 Address:</strong> Main Street, Your Address, Co. , Ireland<br>
+    <strong>⏰ Hours:</strong> Mon–Sat: 9am – 6pm
+  </div>
+
+  <button style="margin-top: 35px;">Book Appointment</button>
+</section>
+
+<!-- FOOTER -->
 <footer>
-    © 2026 Bridal Boutique — Elegance in Every Detail
+  © 2026 Paws &amp; Shine Grooming — All Rights Reserved
 </footer>
 
-</div>
+<!-- JS: ABOUT + SLIDER -->
+<script>
+// ABOUT SECTION TOGGLE
+document.getElementById("about-btn").onclick = function () {
+  const extra = document.getElementById("extra-text");
+  if (extra.style.display === "none") {
+    extra.style.display = "block";
+    setTimeout(() => extra.style.opacity = "1", 10);
+    this.textContent = "Show Less";
+  } else {
+    extra.style.opacity = "0";
+    setTimeout(() => extra.style.display = "none", 500);
+    this.textContent = "Learn More";
+  }
+};
+
+// INSTAGRAM STYLE SLIDER
+const slider = document.querySelector(".slider");
+const btnLeft = document.querySelector(".slider-btn.left");
+const btnRight = document.querySelector(".slider-btn.right");
+
+btnLeft.addEventListener("click", () => {
+  slider.scrollBy({ left: -350, behavior: "smooth" });
+});
+
+btnRight.addEventListener("click", () => {
+  slider.scrollBy({ left: 350, behavior: "smooth" });
+});
+
+// Drag to scroll
+let isDown = false;
+let startX;
+let scrollLeft;
+
+slider.addEventListener("mousedown", (e) => {
+  isDown = true;
+  startX = e.pageX - slider.offsetLeft;
+  scrollLeft = slider.scrollLeft;
+});
+
+slider.addEventListener("mouseleave", () => (isDown = false));
+slider.addEventListener("mouseup", () => (isDown = false));
+
+slider.addEventListener("mousemove", (e) => {
+  if (!isDown) return;
+  e.preventDefault();
+  const x = e.pageX - slider.offsetLeft;
+  const walk = (x - startX) * 2;
+  slider.scrollLeft = scrollLeft - walk;
+});
+
+// NEWSLETTER SUCCESS MESSAGE
+function newsletterSuccess() {
+  const email = document.getElementById("newsletter-email").value;
+  if (email.trim() === "") return;
+
+  document.getElementById("newsletter-success").style.display = "block";
+  document.getElementById("newsletter-email").value = "";
+}
+
+</script>
 
 
 
-<div id="editor-shadow-host" style="all: initial;"></div><input type="file" accept="image/*" style="display: none;"><input type="file" accept="image/*" style="display: none;"><input type="file" accept="image/*" style="display: none;"><input type="file" accept="image/*" style="display: none;"><input type="file" accept="image/*" style="display: none;"><input type="file" accept="image/*" style="display: none;"><input type="file" accept="image/*" style="display: none;"><input type="file" accept="image/*" style="display: none;"><input type="file" accept="image/*" style="display: none;"><input type="file" accept="image/*" style="display: none;"><input type="file" accept="image/*" style="display: none;"><input type="file" accept="image/*" style="display: none;"><input type="file" accept="image/*" style="display: none;"><input type="file" accept="image/*" style="display: none;"><iframe name="__privateStripeController4591" frameborder="0" allowtransparency="true" scrolling="no" role="presentation" allow="payment *" src="https://js.stripe.com/v3/controller-with-preconnect-f5bcd3ea3c89ff5ff5a154202d53dfb8.html#__shared_params__[version]=dahlia&amp;__shared_params__[light_experiment_assignments]=%7B%22token%22%3A%226317d16b-b1e7-431f-b0f7-c25ca4838c39%22%2C%22assignments%22%3A%7B%22habanero_aa_v1%22%3A%22treatment%22%7D%7D&amp;apiKey=pk_test_51SmbYSRqySo1SbUl9zUatOFdeP2eN1jYSDT4gNWFjzDaPLMF4QaeXONAJ9Ii2QVz7Bugnhp11UFCCFyg625JGGGu00uMAvRXJq&amp;apiVersion=2026-03-25.dahlia&amp;stripeJsId=6317d16b-b1e7-431f-b0f7-c25ca4838c39&amp;stripeObjId=sobj-ff3139cc-e8e3-4607-be67-d9e5cadfca01&amp;firstStripeInstanceCreatedLatency=14&amp;controllerCount=1&amp;isCheckout=false&amp;stripeJsLoadTime=1778659638359&amp;manualBrowserDeprecationRollout=false&amp;mids[guid]=NA&amp;mids[muid]=8971c4ba-ef94-4f54-8648-59a0518c9b85da0ac5&amp;mids[sid]=d24f143c-6ecf-48f9-b6d7-455ca2710c7086a99c&amp;referrer=https%3A%2F%2Fwww.ideago.ie%2Fbridal%2Fbridal.html&amp;controllerId=__privateStripeController4591" aria-hidden="true" tabindex="-1" style="border: medium !important; margin: 0px !important; padding: 0px !important; width: 1px !important; min-width: 100% !important; overflow: hidden !important; display: block !important; visibility: hidden !important; position: fixed !important; height: 1px !important; pointer-events: none !important;"></iframe><iframe name="__privateStripeMetricsController4590" frameborder="0" allowtransparency="true" scrolling="no" role="presentation" allow="payment *" src="https://js.stripe.com/v3/m-outer-3437aaddcdf6922d623e172c2d6f9278.html#url=https%3A%2F%2Fwww.ideago.ie%2Fbridal%2Fbridal.html&amp;title=Bridal%20Boutique&amp;referrer=https%3A%2F%2Fwww.ideago.ie%2FBusinessHud&amp;muid=8971c4ba-ef94-4f54-8648-59a0518c9b85da0ac5&amp;sid=d24f143c-6ecf-48f9-b6d7-455ca2710c7086a99c&amp;version=6&amp;preview=false&amp;__shared_params__[version]=dahlia" aria-hidden="true" tabindex="-1" style="border: medium !important; margin: 0px !important; padding: 0px !important; width: 1px !important; min-width: 100% !important; overflow: hidden !important; display: block !important; visibility: hidden !important; position: fixed !important; height: 1px !important; pointer-events: none !important;"></iframe></body></html>
+<div id="editor-shadow-host" style="all: initial;"></div><input type="file" accept="image/*" style="display: none;"><input type="file" accept="image/*" style="display: none;"><input type="file" accept="image/*" style="display: none;"><input type="file" accept="image/*" style="display: none;"><input type="file" accept="image/*" style="display: none;"><input type="file" accept="image/*" style="display: none;"><input type="file" accept="image/*" style="display: none;"><input type="file" accept="image/*" style="display: none;"><input type="file" accept="image/*" style="display: none;"><input type="file" accept="image/*" style="display: none;"><input type="file" accept="image/*" style="display: none;"><input type="file" accept="image/*" style="display: none;"><input type="file" accept="image/*" style="display: none;"><input type="file" accept="image/*" style="display: none;"><input type="file" accept="image/*" style="display: none;"><iframe name="__privateStripeController6211" frameborder="0" allowtransparency="true" scrolling="no" role="presentation" allow="payment *" src="https://js.stripe.com/v3/controller-with-preconnect-f5bcd3ea3c89ff5ff5a154202d53dfb8.html#__shared_params__[version]=dahlia&amp;__shared_params__[light_experiment_assignments]=%7B%22token%22%3A%2272ce2ced-1ff8-455d-800b-1255c3e606e5%22%2C%22assignments%22%3A%7B%22habanero_aa_v1%22%3A%22control%22%7D%7D&amp;apiKey=pk_test_51SmbYSRqySo1SbUl9zUatOFdeP2eN1jYSDT4gNWFjzDaPLMF4QaeXONAJ9Ii2QVz7Bugnhp11UFCCFyg625JGGGu00uMAvRXJq&amp;apiVersion=2026-03-25.dahlia&amp;stripeJsId=72ce2ced-1ff8-455d-800b-1255c3e606e5&amp;stripeObjId=sobj-38d8fbf5-16ed-4224-82fa-f669d5db516a&amp;firstStripeInstanceCreatedLatency=8&amp;controllerCount=1&amp;isCheckout=false&amp;stripeJsLoadTime=1778660789370&amp;manualBrowserDeprecationRollout=false&amp;mids[guid]=NA&amp;mids[muid]=8971c4ba-ef94-4f54-8648-59a0518c9b85da0ac5&amp;mids[sid]=d24f143c-6ecf-48f9-b6d7-455ca2710c7086a99c&amp;referrer=https%3A%2F%2Fwww.ideago.ie%2Fdog%2Fdog.html&amp;controllerId=__privateStripeController6211" aria-hidden="true" tabindex="-1" style="border: medium !important; margin: 0px !important; padding: 0px !important; width: 1px !important; min-width: 100% !important; overflow: hidden !important; display: block !important; visibility: hidden !important; position: fixed !important; height: 1px !important; pointer-events: none !important;"></iframe><iframe name="__privateStripeMetricsController6210" frameborder="0" allowtransparency="true" scrolling="no" role="presentation" allow="payment *" src="https://js.stripe.com/v3/m-outer-3437aaddcdf6922d623e172c2d6f9278.html#url=https%3A%2F%2Fwww.ideago.ie%2Fdog%2Fdog.html&amp;title=Paws%20%26%20Shine%20Grooming&amp;referrer=https%3A%2F%2Fwww.ideago.ie%2FBusinessHud&amp;muid=8971c4ba-ef94-4f54-8648-59a0518c9b85da0ac5&amp;sid=d24f143c-6ecf-48f9-b6d7-455ca2710c7086a99c&amp;version=6&amp;preview=false&amp;__shared_params__[version]=dahlia" aria-hidden="true" tabindex="-1" style="border: medium !important; margin: 0px !important; padding: 0px !important; width: 1px !important; min-width: 100% !important; overflow: hidden !important; display: block !important; visibility: hidden !important; position: fixed !important; height: 1px !important; pointer-events: none !important;"></iframe></body></html>
